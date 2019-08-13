@@ -77,7 +77,10 @@ def run_round(players:List[str]):
             for i in range(len(players)):
                 for card in round_plays[i]:
                     state.hands[i].remove(card)
-                    state.played_cards[i].append(card)
+                    if card != SushiCardType.PUDDING:
+                        state.played_cards[i].append(card)
+                    else:
+                        state.puddings[i] += 1
                 if len(round_plays[i]) == 2:
                     state.hands[i].append(SushiCardType.CHOPSTICKS)
                     state.played_cards[i].remove(SushiCardType.CHOPSTICKS)
