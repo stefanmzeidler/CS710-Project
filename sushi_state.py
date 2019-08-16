@@ -72,8 +72,8 @@ def score_round(played_cards: List[List[SushiCardType]]) -> List[int]:
     maki_counts = [0] * len(played_cards)
     for i, cards in enumerate(played_cards):
         counts = count_card_types(cards)
-        scores[i] += 5 * (counts[SushiCardType.TEMPURA] % 2)
-        scores[i] += 10 * (counts[SushiCardType.SASHIMI] % 3)
+        scores[i] += 5 * int(counts[SushiCardType.TEMPURA] / 2)
+        scores[i] += 10 * int(counts[SushiCardType.SASHIMI] / 3)
         dumplings = min(counts[SushiCardType.DUMPLING], 5)
         scores[i] += int(dumplings * (dumplings + 1) / 2)
         # Score nigiri
@@ -92,10 +92,10 @@ def score_round(played_cards: List[List[SushiCardType]]) -> List[int]:
         maki_counts[i] += counts[SushiCardType.MAKI_ROLLS_3] * 3
     # Score Maki
     ordered = sorted(maki_counts)
-    if ordered[0] > 0:
-        divide_points(scores, 6, maki_counts, ordered[0])
-        if ordered[1] > 0:
-            divide_points(scores, 3, maki_counts, ordered[1])
+    if ordered[-1] > 0:
+        divide_points(scores, 6, maki_counts, ordered[-1])
+        if ordered[-2] > 0:
+            divide_points(scores, 3, maki_counts, ordered[-2])
     return scores
 
 def score_pudding(pudding_counts: List[int]) -> List[int]:
@@ -144,7 +144,7 @@ class GameState(BaseModel):
             print(f'\tSCORE: {self.scores[i]}')
             print(f'\tPUDDINGS: {self.puddings[i]}')
             print('\tHAND')
-            for card in self.played_cards[i]:
+            for card in self.hands[i]:
                 print(f'\t\t{card.value}')  
             print('\tPLAYED')
             for card in self.played_cards[i]:

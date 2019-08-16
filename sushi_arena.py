@@ -4,6 +4,8 @@ import argparse
 from sushi_state import get_shuffled_cards, HAND_SIZES, SushiCardType, GameState, score_round, score_pudding
 from typing import List, Optional, Callable, Dict
 import subprocess
+import random
+import pandas as pd
 
 import ai_rand1
 
@@ -43,19 +45,20 @@ def deal_hands(draw_cards:List[SushiCardType], player_count:int) -> List[List[Su
 
 
 # Players pass hands to the next higher numbered player wrapping at the top
-def run_round(players:List[str]):
+def run_game(players: List[str], verbose: bool) -> GameState:
+    start_hand_size = HAND_SIZES[len(players)]
     draw_cards = get_shuffled_cards()
     state = GameState.make_empty(len(players))
+    UNKNOWN_HAND = [[SushiCardType.HIDDEN] * start_hand_size]
     for round_num in range(3):
-        start_hand_size = HAND_SIZES[len(players)]
         state.hands = deal_hands(draw_cards, len(players))
         state.round_num = round_num
         round_plays: List[List[SushiCardType]] = [ [] for i in range(len(players)) ]
         for turn in range(start_hand_size):
             for i, player in enumerate(players):
-                if turn == 0:
+                if turn < len(players) - 1:
                     unhidden = list(state.hands)
-                    state.hands[1:] = [[SushiCardType.HIDDEN] * start_hand_size] * (len(players) - 1)
+                    state.hands[turn + 1:] = UNKNOWN_HAND * (len(players) - 1 - turn)
                 played = AI_TYPES[player](state)
                 if len(played) == 2:
                     try:
@@ -71,7 +74,7 @@ def run_round(players:List[str]):
                     except ValueError:
                         raise ValueError(f'ai {player} tried to play {played} with a hand of {state.hands[0]}')
                 round_plays[i] = played
-                if turn == 0:
+                if turn < len(players) - 1:
                     state.hands = unhidden
                 state.rotate()
             for i in range(len(players)):
@@ -86,18 +89,42 @@ def run_round(players:List[str]):
                     state.played_cards[i].remove(SushiCardType.CHOPSTICKS)
         round_scores = score_round(state.played_cards)
         state.scores = sum_lists(round_scores, state.scores)
+        if verbose:
+            state.pretty_print()
         for i in range(len(players)):
             state.discard_pile += state.played_cards[i]
             state.played_cards[i] = [] 
     pudding_scores = score_pudding(state.puddings)
     state.scores = sum_lists(pudding_scores, state.scores)
-    state.pretty_print()
+    if verbose:
+        state.pretty_print()
+    return state
     
     
 
 
-def main(players:List[str], games: int):
-    run_round(players)
+def main(players:List[str], games: int, verbose: bool):
+    scores = []
+    names = [ f'{player}_{i}' for i, player in enumerate(players)]
+    win_rates:Dict[str, Dict[str, int]] = {}
+    for name1 in names:
+        win_rates[name1] = {}
+        for name2 in names:
+            win_rates[name1][name2] = 0
+    for _ in range(games):
+        result = run_game(players, verbose)
+        scores.append(result.scores)
+        for i in range(len(players)):
+            for k in range(len(players)):
+                if result.scores[i] > result.scores[k]:
+                    win_rates[names[i]][names[k]] += 1
+        
+    win_df = pd.DataFrame(win_rates) / games * 100
+    
+    print(win_df)
+    df = pd.DataFrame(data=scores, columns=names)
+    print(df.describe())
+    
 
 
 if __name__ == '__main__':
@@ -107,9 +134,14 @@ if __name__ == '__main__':
                         help='<Requires 2-5> AI types for players', action=required_length(2, 5), required=True)
     parser.add_argument("-n", type=int, default=100,
                         help="Number of games to run")
+    parser.add_argument("-r", type=int, default=None,
+                        help="Set random seed")    
+    parser.add_argument("-v", action="store_true",
+                        help="Print output of each round")                
     try:
         args = parser.parse_args()
     except argparse.ArgumentTypeError as err:
         print(err)
         exit(1)
-    main(args.players, args.n)
+    random.seed(args.r)
+    main(args.players, args.n, args.v)
