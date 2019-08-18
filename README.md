@@ -24,3 +24,4 @@ Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
   * Better visualization of games and results
   * Better way to store stats to aggregate accross runs
   * Logging, and documentation
+  * Think about not rotating the state for each AI and instead passing in an index
