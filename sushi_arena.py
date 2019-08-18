@@ -8,9 +8,11 @@ import random
 import pandas as pd
 
 import ai_rand1
+import ai_rand2
 
 AI_TYPES: Dict[str, Callable[[GameState], List[SushiCardType]]] = {
-    'ai_rand1': ai_rand1.play_turn 
+    'rand1': ai_rand1.play_turn,
+    'rand2': ai_rand2.play_turn, 
 }
 
 
@@ -33,7 +35,6 @@ def run_player(player, state: GameState) -> List[SushiCardType]:
 
     pass
 
-# TODO: Fix to deal with running out of cards for large number of players
 # NOTE: Modifies draw_cards
 def deal_hands(draw_cards:List[SushiCardType], player_count:int) -> List[List[SushiCardType]]:
     hand_size = HAND_SIZES[player_count]
@@ -61,9 +62,7 @@ def run_game(players: List[str], verbose: bool) -> GameState:
                     state.hands[turn + 1:] = UNKNOWN_HAND * (len(players) - 1 - turn)
                 played = AI_TYPES[player](state)
                 if len(played) == 2:
-                    try:
-                        state.played_cards[0].index(SushiCardType.CHOPSTICKS)
-                    except ValueError:
+                    if SushiCardType.CHOPSTICKS not in state.played_cards[0]:
                         raise ValueError(f'ai {player} tried to play 2 cards without chopsticks')
                 elif len(played) != 1:
                     raise ValueError(f'ai {player} tried to play {len(played)} cards')
