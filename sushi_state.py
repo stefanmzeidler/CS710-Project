@@ -128,11 +128,14 @@ class GameState(BaseModel):
                    scores = [0] * num_players,
         )
 
-    def rotate(self):
+    def rotate_all(self):
         self.hands = self.hands[1:] + self.hands[:1]
         self.played_cards = self.played_cards[1:] + self.played_cards[:1]
         self.scores = self.scores[1:] + self.scores[:1]
         self.puddings = self.puddings[1:] + self.puddings[:1]        
+
+    def rotate_hands(self):
+        self.hands = self.hands[1:] + self.hands[:1]
 
     def pretty_print(self):
         print(f'ROUND: {self.round_num}')

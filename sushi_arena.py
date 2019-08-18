@@ -75,7 +75,7 @@ def run_game(players: List[str], verbose: bool) -> GameState:
                 round_plays[i] = played
                 if turn < len(players) - 1:
                     state.hands = unhidden
-                state.rotate()
+                state.rotate_all()
             for i in range(len(players)):
                 for card in round_plays[i]:
                     state.hands[i].remove(card)
@@ -86,6 +86,7 @@ def run_game(players: List[str], verbose: bool) -> GameState:
                 if len(round_plays[i]) == 2:
                     state.hands[i].append(SushiCardType.CHOPSTICKS)
                     state.played_cards[i].remove(SushiCardType.CHOPSTICKS)
+            state.rotate_hands()
         round_scores = score_round(state.played_cards)
         state.scores = sum_lists(round_scores, state.scores)
         if verbose:
@@ -117,13 +118,13 @@ def main(players:List[str], games: int, verbose: bool):
             for k in range(len(players)):
                 if result.scores[i] > result.scores[k]:
                     win_rates[names[i]][names[k]] += 1
-        
+    
     win_df = pd.DataFrame(win_rates) / games * 100
     
     print(win_df)
     df = pd.DataFrame(data=scores, columns=names)
     print(df.describe())
-    
+
 
 
 if __name__ == '__main__':
