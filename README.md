@@ -15,8 +15,8 @@ optional arguments:
 ```
 
 # Reference
-Game Site: https://gamewright.com/product/Sushi-Go
-Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
+  * Game Site: https://gamewright.com/product/Sushi-Go
+  * Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
 
 # Todo
   * Add some smarter AIs
@@ -25,3 +25,5 @@ Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
   * Better way to store stats to aggregate accross runs
   * Logging, and documentation
   * Think about not rotating the state for each AI and instead passing in an index
+  * Organize into python package with dependancies, setup, subfolders and way of importing external AI's
+  * Add API to allow GUI for human players, or non-python AIs

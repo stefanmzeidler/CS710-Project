@@ -3,7 +3,6 @@
 import argparse
 from sushi_state import get_shuffled_cards, HAND_SIZES, SushiCardType, GameState, score_round, score_pudding
 from typing import List, Optional, Callable, Dict
-import subprocess
 import random
 import pandas as pd
 
