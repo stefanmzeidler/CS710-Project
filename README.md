@@ -19,6 +19,7 @@ optional arguments:
   * Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
 
 # Todo
+  * Add maki logic to minmax1 AI, test to make sure it works
   * Add some smarter AIs
   * Add series of AIs with simple hierarchy of preffered cards
   * Better visualization of games and results
