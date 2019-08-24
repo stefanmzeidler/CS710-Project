@@ -57,6 +57,9 @@ def count_card_types(cards: List[SushiCardType]) -> Dict[SushiCardType, int]:
         counts[card] += 1
     return counts
 
+def score_dumplings(dumplings: int) -> int:
+    dumplings = min(dumplings, 5)
+    return int(dumplings * (dumplings + 1) / 2)
 
 # NOTE: modifies scores
 def divide_points(scores: List[int], total:int , players_points: List[int], winning_points: Optional[int]=None):
@@ -74,8 +77,7 @@ def score_round(played_cards: List[List[SushiCardType]]) -> List[int]:
         counts = count_card_types(cards)
         scores[i] += 5 * int(counts[SushiCardType.TEMPURA] / 2)
         scores[i] += 10 * int(counts[SushiCardType.SASHIMI] / 3)
-        dumplings = min(counts[SushiCardType.DUMPLING], 5)
-        scores[i] += int(dumplings * (dumplings + 1) / 2)
+        scores[i] += score_dumplings(counts[SushiCardType.DUMPLING])
         # Score nigiri
         wasabi = 0
         for card in cards:
@@ -158,7 +160,7 @@ def get_shuffled_cards() -> List[SushiCardType]:
     shuffled: List[SushiCardType] = []
     for card, count in TOTAL_CARD_COUNTS.items():
         cards += [card] * count
-    for i in range(TOTAL_CARDS - 1, 0, -1):
+    for i in range(TOTAL_CARDS - 1, -1, -1):
         idx = randint(0, i)
         shuffled.append(cards.pop(idx))
     return shuffled

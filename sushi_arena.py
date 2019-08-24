@@ -8,11 +8,21 @@ import pandas as pd
 
 import ai_rand1
 import ai_rand2
+import ai_pref1
+import ai_minmax1
 
 AI_TYPES: Dict[str, Callable[[GameState], List[SushiCardType]]] = {
     'rand1': ai_rand1.play_turn,
     'rand2': ai_rand2.play_turn, 
+    'pref1_pudding': ai_pref1.get_play_turn(SushiCardType.PUDDING),
+    'pref1_wasabi': ai_pref1.get_play_turn(SushiCardType.WASABI),
+    'pref1_tempura': ai_pref1.get_play_turn(SushiCardType.TEMPURA),
+    'pref1_dumpling': ai_pref1.get_play_turn(SushiCardType.DUMPLING),
+    'pref1_maki3': ai_pref1.get_play_turn(SushiCardType.MAKI_ROLLS_3),
+    'minmax1': ai_minmax1.play_turn,
 }
+
+
 
 
 
