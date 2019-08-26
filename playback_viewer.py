@@ -1,10 +1,62 @@
 #! /usr/bin/env python3
 
 import argparse
+from sushi_state import GameState, GameStateSet
 
+from typing import TextIO
 
-def main():
-    pass
+import pygame
+
+from pygame.locals import *
+ 
+class App:
+    def __init__(self, turns: GameStateSet):
+        self.turns = turns
+        self._running = True
+        self._display_surf = None
+        self.clock = pygame.time.Clock()
+        self.size = self.weight, self.height = 640, 400
+ 
+    def on_init(self):
+        pygame.init()
+        self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        self._running = True
+ 
+    def on_event(self, event):
+        if event.type == pygame.QUIT:
+            self._running = False
+    def on_loop(self):
+        pass
+    def on_render(self):
+        pygame.display.flip()        
+
+    def on_cleanup(self):
+        pygame.quit()
+ 
+    def on_execute(self):
+        if self.on_init() == False:
+            self._running = False
+
+        
+        self._display_surf.fill((0, 0, 0))
+        color = (255, 100, 0)
+ 
+        pygame.draw.rect(self._display_surf, color, pygame.Rect(10, 10, 60, 60))
+ 
+        while( self._running ):
+            for event in pygame.event.get():
+                self.on_event(event)
+            self.on_loop()
+            self.on_render()
+
+            self.clock.tick(60)
+        self.on_cleanup()
+ 
+
+def main(playback_file: TextIO):
+    turns = GameStateSet.parse_raw(playback_file.read())
+    theApp = App(turns)
+    theApp.on_execute()
 
 
 if __name__ == '__main__':
@@ -16,9 +68,5 @@ if __name__ == '__main__':
     parser.add_argument(
         'play_file', type=argparse.FileType('r'),
          help='The file to open')
-    # parser.add_argument(
-    #     '--log', default=sys.stdout, type=argparse.FileType('w'),
-    #     help='the file where the sum should be written')
     args = parser.parse_args()
-    print('%s' % args.play_file.read())
-    main()
+    main(args.play_file)

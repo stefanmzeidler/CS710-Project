@@ -1,14 +1,12 @@
-from sushi_state import GameState
+from sushi_state import GameStateSet, GameState
 from typing import List
 
 class GameRecorder:
     def __init__(self):
-        self.states: List[GameState] = []
+        self.turns = GameStateSet.parse_obj({'states':[]})
 
     def save_state(self, state: GameState):
-        self.states.append(state.copy(deep=True))
+        self.turns.states.append(state.copy(deep=True))
 
     def write_file(self, fd):
-        fd.write('[')
-        fd.write(','.join(state.json() for state in self.states))
-        fd.write(']')
+        fd.write(self.turns.json())

@@ -112,6 +112,7 @@ def score_pudding(pudding_counts: List[int]) -> List[int]:
     return scores
 
 
+
 class GameState(BaseModel):
     discard_pile: List[SushiCardType]
     played_cards: List[List[SushiCardType]]
@@ -154,6 +155,9 @@ class GameState(BaseModel):
             print('\tPLAYED')
             for card in self.played_cards[i]:
                 print(f'\t\t{card.value}')                
+
+class GameStateSet(BaseModel):
+    states: List[GameState]
 
 def get_shuffled_cards() -> List[SushiCardType]:
     cards: List[SushiCardType] = []
