@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
 import argparse
-from sushi_state import GameState, GameStateSet, SushiCardType, count_card_types
+from sushi_state import GameState, GameStateSet, SushiCardType, count_card_types, pair_wasabi
 
-from typing import TextIO, Tuple
+from typing import TextIO, Tuple, List
 
 import pygame
 
@@ -115,13 +115,21 @@ class App:
         
         y += CARD_H + 10
         App.draw_centered_text(surface, surface.get_width() / 2, y, 'Played', FORE_C, LABEL_SIZE)
-        counts = count_card_types(state.played_cards[player_idx])
+        played_cards = list(state.played_cards[player_idx])
+        wasabi_combos = pair_wasabi(played_cards)
+        for card in wasabi_combos:
+            played_cards.remove(card)
+            played_cards.remove(SushiCardType.WASABI)
+        counts = count_card_types(played_cards)
         counts = { card:count for card, count in counts.items() if count > 0 }
         y += 10
         for k, card in enumerate(counts):
             count = counts[card]
             x = k * (CARD_W + CARD_SPACING)
             App.draw_card(surface.subsurface(Rect(x, y, CARD_W, CARD_H)), card, FORE_C, BACK_C, count)
+        for k, card in enumerate(wasabi_combos):
+            x = (k + len(counts)) * (CARD_W + CARD_SPACING)
+            App.draw_card(surface.subsurface(Rect(x, y, CARD_W, CARD_H)), card, FORE_C, BACK_C, 1, True)
         
         y += CARD_H + 10
         pudding = state.puddings[player_idx]
@@ -131,9 +139,11 @@ class App:
 
 
     @staticmethod
-    def draw_card(surface: pygame.Surface, card: SushiCardType, color_fore: Color, color_back: Color, num: int = 1):
+    def draw_card(surface: pygame.Surface, card: SushiCardType, color_fore: Color, color_back: Color, num: int = 1, wasabi: bool = False):
         OFFSET = 0.03
         BORDER_SIZE = 2
+        if wasabi:
+            num = 2
         offset = max(OFFSET * surface.get_width(), OFFSET * surface.get_height())
         h = surface.get_height() - offset * (num -1)
         w = surface.get_width() - offset * (num -1)
@@ -145,7 +155,10 @@ class App:
             pygame.draw.rect(surface, color_fore, Rect(x, y, w, h), BORDER_SIZE)
 
         App.draw_centered_text(surface, w/2 + x, h/2 + y, card, color_fore, 14)
-        App.draw_centered_text(surface, w/2 + x, h/2 + y + 15, f'x{num}', color_fore, 14)
+        if wasabi:
+            App.draw_centered_text(surface, w/2 + x, h/2 + y + 15, 'with WASABI', color_fore, 14)
+        else:
+            App.draw_centered_text(surface, w/2 + x, h/2 + y + 15, f'x{num}', color_fore, 14)
  
 
 def main(playback_file: TextIO):

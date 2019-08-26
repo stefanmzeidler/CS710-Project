@@ -49,6 +49,18 @@ NIGIRI_VALS = {
     SushiCardType.SQUID_NIGIRI: 3,
 }
 
+def pair_wasabi(cards: List[SushiCardType]) -> List[SushiCardType]:
+    pairs: List[SushiCardType] = []
+    wasabi = 0
+    for card in cards:
+        if card == SushiCardType.WASABI:
+            wasabi += 1
+        elif card in NIGIRI_VALS:
+            if wasabi > 0:
+                wasabi -= 1
+                pairs.append(card)
+    return pairs
+
 def count_card_types(cards: List[SushiCardType]) -> Dict[SushiCardType, int]:
     counts = {}
     for card in SushiCardType:
