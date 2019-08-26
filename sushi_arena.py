@@ -2,6 +2,7 @@
 
 import argparse
 from sushi_state import get_shuffled_cards, HAND_SIZES, SushiCardType, GameState, score_round, score_pudding
+from playback import GameRecorder
 from typing import List, Optional, Callable, Dict
 import random
 import pandas as pd
@@ -23,9 +24,6 @@ AI_TYPES: Dict[str, Callable[[GameState], List[SushiCardType]]] = {
 }
 
 
-
-
-
 def sum_lists(first: List[int], second: List[int]) -> List[int]:
     return [x + y for x, y in zip(first, second)]
 
@@ -40,10 +38,6 @@ def required_length(nmin: int, nmax: Optional[int]):
             setattr(args, self.dest, values)
     return RequiredLength
 
-def run_player(player, state: GameState) -> List[SushiCardType]:
-
-    pass
-
 # NOTE: Modifies draw_cards
 def deal_hands(draw_cards:List[SushiCardType], player_count:int) -> List[List[SushiCardType]]:
     hand_size = HAND_SIZES[player_count]
@@ -53,18 +47,19 @@ def deal_hands(draw_cards:List[SushiCardType], player_count:int) -> List[List[Su
             hands[i].append(draw_cards.pop(0))
     return hands
 
-
 # Players pass hands to the next higher numbered player wrapping at the top
-def run_game(players: List[str], verbose: bool) -> GameState:
+def run_game(players: List[str], verbose: bool, save_file: Optional[str]) -> GameState:
     start_hand_size = HAND_SIZES[len(players)]
     draw_cards = get_shuffled_cards()
     state = GameState.make_empty(len(players))
     UNKNOWN_HAND = [[SushiCardType.HIDDEN] * start_hand_size]
+    record = GameRecorder()
     for round_num in range(3):
         state.hands = deal_hands(draw_cards, len(players))
         state.round_num = round_num
         round_plays: List[List[SushiCardType]] = [ [] for i in range(len(players)) ]
         for turn in range(start_hand_size):
+            record.save_state(state)
             for i, player in enumerate(players):
                 if turn < len(players) - 1:
                     unhidden = list(state.hands)
@@ -105,6 +100,10 @@ def run_game(players: List[str], verbose: bool) -> GameState:
             state.played_cards[i] = [] 
     pudding_scores = score_pudding(state.puddings)
     state.scores = sum_lists(pudding_scores, state.scores)
+    if save_file is not None:
+        record.save_state(state)
+        with open(save_file, 'w') as fd:
+            record.write_file(fd)
     if verbose:
         state.pretty_print()
     return state
@@ -112,7 +111,7 @@ def run_game(players: List[str], verbose: bool) -> GameState:
     
 
 
-def main(players:List[str], games: int, verbose: bool):
+def main(players:List[str], games: int, verbose: bool, save: bool):
     scores = []
     names = [ f'{player}_{i}' for i, player in enumerate(players)]
     win_rates:Dict[str, Dict[str, int]] = {}
@@ -120,8 +119,11 @@ def main(players:List[str], games: int, verbose: bool):
         win_rates[name1] = {}
         for name2 in names:
             win_rates[name1][name2] = 0
-    for _ in range(games):
-        result = run_game(players, verbose)
+    for i in range(games):
+        save_file = None
+        if save:
+            save_file = f'game{i}.json'
+        result = run_game(players, verbose, save_file)
         scores.append(result.scores)
         for i in range(len(players)):
             for k in range(len(players)):
@@ -147,10 +149,12 @@ if __name__ == '__main__':
                         help="Set random seed")    
     parser.add_argument("-v", action="store_true",
                         help="Print output of each round")                
+    parser.add_argument("-b", action="store_true",
+                        help="Save each turn action for playback")
     try:
         args = parser.parse_args()
     except argparse.ArgumentTypeError as err:
         print(err)
         exit(1)
     random.seed(args.r)
-    main(args.players, args.n, args.v)
+    main(args.players, args.n, args.v, args.b)

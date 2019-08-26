@@ -105,3 +105,6 @@ venv.bak/
 
 # vscode
 .vscode/
+
+# playback files
+game*.json
