@@ -21,8 +21,8 @@ optional arguments:
 # Todo
   * Add maki logic to minmax1 AI, test to make sure it works
   * Add some smarter AIs
+  * Show Wasabi applied to Nigri in viewer
   * Add series of AIs with simple hierarchy of preffered cards
-  * Better visualization of games and results
   * Better way to store stats to aggregate accross runs
   * Logging, and documentation
   * Think about not rotating the state for each AI and instead passing in an index
