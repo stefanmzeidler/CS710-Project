@@ -155,7 +155,7 @@ def play_turn(state: GameState) -> List[SushiCardType]:
     # check dumpling
     available = _get_available(SushiCardType.DUMPLING, hand_counts0, hand_counts1)
     min_dumpling_score = 0.0
-    if available > 0:
+    if hand_counts0[SushiCardType.DUMPLING] > 0:
         min_dumpling_score = (play_counts0[SushiCardType.DUMPLING] + score_dumplings(available)) / available
 
 
