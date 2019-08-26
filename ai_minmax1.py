@@ -1,4 +1,4 @@
-from sushi_state import GameState, SushiCardType, get_shuffled_cards, count_card_types, score_dumplings
+from sushi_state import GameState, SushiCardType, get_shuffled_cards, count_card_types, score_dumplings, pair_wasabi
 from typing import List, Dict, Tuple
 from random import randint
 from functools import reduce
@@ -8,8 +8,8 @@ import ai_pref1
 import ai_rand2
 
 def _get_available(card: SushiCardType, hand_counts0: Dict[SushiCardType, int], hand_counts1: Dict[SushiCardType, int]) -> int:
-    hand0_available = math.ceil(hand_counts0[SushiCardType.PUDDING] / 2.0)
-    hand1_available = math.floor(hand_counts1[SushiCardType.PUDDING] / 2.0)
+    hand0_available = math.ceil(hand_counts0[card] / 2.0)
+    hand1_available = math.floor(hand_counts1[card] / 2.0)
     return hand0_available + hand1_available
 
 # def _get_maki( hand_counts0: Dict[SushiCardType, int], hand_counts1: Dict[SushiCardType, int],  played_counts: Dict[SushiCardType, int]) -> Tuple[int, int]:
@@ -112,20 +112,36 @@ def play_turn(state: GameState) -> List[SushiCardType]:
     #             our_max = available1 + available2 * 2 + available3 * 3 + current
     #         min_maki_score = 6.0 / (available1 + available2 + available3)
 
+
+    wasabi_pairs = pair_wasabi(state.played_cards[0])
+    wasabi_active = len(wasabi_pairs) < play_counts0[SushiCardType.WASABI]
+
     # check wasabi
     min_wasabi_score = 0.0
-    if SushiCardType.WASABI in hands[0]:
-        if hand_counts1[SushiCardType.SQUID_NIGIRI] > 1:
+    if SushiCardType.WASABI in hands[0] and not wasabi_active:
+        if hand_counts1[SushiCardType.SQUID_NIGIRI] > 1 or hand_counts0[SushiCardType.SQUID_NIGIRI] > 1:
             min_wasabi_score = 9.0 / 2.0
-        elif hand_counts1[SushiCardType.SALMON_NIGIRI] > 1 or (hand_counts1[SushiCardType.SQUID_NIGIRI] > 0 and hand_counts1[SushiCardType.SALMON_NIGIRI] > 0):
+        elif (hand_counts1[SushiCardType.SALMON_NIGIRI] > 1 or \
+                (hand_counts1[SushiCardType.SQUID_NIGIRI] > 0 and \
+                hand_counts1[SushiCardType.SALMON_NIGIRI] > 0)) or \
+                (hand_counts0[SushiCardType.SALMON_NIGIRI] > 1 or \
+                (hand_counts0[SushiCardType.SQUID_NIGIRI] > 0 and \
+                hand_counts0[SushiCardType.SALMON_NIGIRI] > 0)):
             min_wasabi_score = 6.0 / 2.0
-        elif hand_counts1[SushiCardType.EGG_NIGIRI] > 1 or ((hand_counts1[SushiCardType.SQUID_NIGIRI] > 0 or hand_counts1[SushiCardType.SALMON_NIGIRI] > 0) and hand_counts1[SushiCardType.EGG_NIGIRI] > 0):
+        elif (hand_counts1[SushiCardType.EGG_NIGIRI] > 1 or \
+                ((hand_counts1[SushiCardType.SQUID_NIGIRI] > 0 or \
+                hand_counts1[SushiCardType.SALMON_NIGIRI] > 0) and \
+                hand_counts1[SushiCardType.EGG_NIGIRI] > 0)) or \
+                (hand_counts0[SushiCardType.EGG_NIGIRI] > 1 or \
+                ((hand_counts0[SushiCardType.SQUID_NIGIRI] > 0 or \
+                hand_counts0[SushiCardType.SALMON_NIGIRI] > 0) and \
+                hand_counts0[SushiCardType.EGG_NIGIRI] > 0)):
             min_wasabi_score = 3.0 / 2.0
 
     # check nigri
     min_nigri_score = 0.0
     wasabi_mult = 1.0
-    if SushiCardType.WASABI in state.played_cards[0]:
+    if wasabi_active:
         wasabi_mult = 3.0
     if hand_counts0[SushiCardType.SQUID_NIGIRI] > 0:
         min_nigri_score = wasabi_mult * 3.0
