@@ -19,6 +19,7 @@ optional arguments:
   * Game Rules: https://gamewright.com/pdfs/Rules/SushiGoTM-RULES.pdf
 
 # Todo
+  * Refactor to share code for human_gui and replay viewer
   * Add maki logic to minmax1 AI, chopsticks?, test to make sure it works
   * Add support for chopsticks in human GUI, other improvements
   * Add some smarter AIs
