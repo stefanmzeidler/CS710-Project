@@ -24,6 +24,7 @@ def play_turn(state: GameState) -> List[SushiCardType]:
     if len(state.hands[0]) > 1 and SushiCardType.CHOPSTICKS in state.played_cards[0]:
         sel = input('Choose a second card? (y/n): ')
         if sel == 'y':
+            idx2 = None
             while idx2 is None:
                 sel = input('Select valid card: ')
                 try:

@@ -12,6 +12,7 @@ import ai_rand2
 import ai_pref1
 import ai_minmax1
 import human_cli
+import human_gui
 
 AI_TYPES: Dict[str, Callable[[GameState], List[SushiCardType]]] = {
     'rand1': ai_rand1.play_turn,
@@ -23,6 +24,7 @@ AI_TYPES: Dict[str, Callable[[GameState], List[SushiCardType]]] = {
     'pref1_maki3': ai_pref1.get_play_turn(SushiCardType.MAKI_ROLLS_3),
     'minmax1': ai_minmax1.play_turn,
     'human_cli': human_cli.play_turn,
+    'human_gui': human_gui.play_turn,
 }
 
 

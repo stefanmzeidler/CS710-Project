@@ -20,10 +20,10 @@ optional arguments:
 
 # Todo
   * Add maki logic to minmax1 AI, chopsticks?, test to make sure it works
+  * Add support for chopsticks in human GUI, other improvements
   * Add some smarter AIs
   * Add series of AIs with simple hierarchy of preffered cards
   * Better way to store stats to aggregate accross runs
   * Logging, and documentation
   * Think about not rotating the state for each AI and instead passing in an index
   * Organize into python package with dependancies, setup, subfolders and way of importing external AI's
-  * Add API to allow GUI for human players, or non-python AIs
