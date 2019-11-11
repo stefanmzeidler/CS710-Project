@@ -170,9 +170,6 @@ def main(playback_file: TextIO):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="View turns from a game playback JSON file")
-    
-    parser = argparse.ArgumentParser(
-        description='sum the integers at the command line')
     parser.add_argument(
         'play_file', type=argparse.FileType('r'),
          help='The file to open')
