@@ -31,8 +31,8 @@ class Deck:
         return self.cards.pop()
 
     def print_deck(self):
-        for card in self.cards:
-            print(card.name)
+        for deck_card in self.cards:
+            print(deck_card.name)
 
 if __name__ == '__main__':
     deck = Deck()

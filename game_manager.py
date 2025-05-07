@@ -19,7 +19,7 @@ class Game:
 
     def play(self):
         for self.game_round in range(3):
-            print(f"Starting round: {self.game_round}")
+            # print(f"Starting round: {self.game_round}")
             # if game_round > 0:
             #     assert(len(self.deck.cards) < 104)
             self.deal_cards()
@@ -39,10 +39,10 @@ class Game:
         for player in self.players:
             game_data['player_name'].append(player.name)
             game_data['score'].append(player.score)
-            print(player.name, " : ", player.score)
+            # print(player.name, " : ", player.score)
             for game_round, cards in player.card_history.items():
                 game_data[f'round_{game_round+1}'].append(cards)
-                print(f"{game_round} : {chosen_cards_to_strings(cards)}")
+                # print(f"{game_round} : {chosen_cards_to_strings(cards)}")
         return game_data
 
     def deal_cards(self):

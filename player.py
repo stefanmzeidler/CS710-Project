@@ -3,7 +3,7 @@ from collections import defaultdict
 import card
 import copy
 from card import Card
-MCTSPlayer = "MCTS Player"
+MCTSPLAYER = "MCTS Player"
 class Player(ABC):
     def __init__(self, name):
         self.name = name
