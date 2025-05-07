@@ -1,15 +1,16 @@
-TEMPURA = "tempura"
-SASHIMI = "sashimi"
-DUMPLING = "dumpling"
+CHOPSTICKS = "chopsticks"
 DOUBLE_MAKI = "double_maki"
-TRIPLE_MAKI = "triple_maki"
-SINGLE_MAKI = "single_maki"
-SALMON = "salmon"
-SQUID = "squid"
+DUMPLING = "dumpling"
 EGG = "egg"
 PUDDING = "pudding"
+SALMON = "salmon"
+SASHIMI = "sashimi"
+SINGLE_MAKI = "single_maki"
+SQUID = "squid"
+TEMPURA = "tempura"
+TRIPLE_MAKI = "triple_maki"
 WASABI = "wasabi"
-CHOPSTICKS = "chopsticks"
+
 
 class Card(object):
     def __init__(self, name):

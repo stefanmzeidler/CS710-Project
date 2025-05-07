@@ -27,8 +27,8 @@ class Game:
                 self.turn = i
                 for player in self.players:
                     player.play_turn(self.get_game_state())
-                for player in self.players:
-                    print(f"{player.name} chose {player.last_played}. {player.name}'s chosen cards are: {player.chosen_cards}")
+                # for player in self.players:
+                #     print(f"{player.name} chose {player.last_played}. {player.name}'s chosen cards are: {player.chosen_cards}")
                 self.pass_hands()
             score_round(self.players)
             for player in self.players:
