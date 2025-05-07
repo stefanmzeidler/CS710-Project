@@ -43,7 +43,8 @@ class MCTSPlayer(Player):
                 node = node.expand()
 
             # 3. Simulation returns score directly now
-            reward = node.state  # simulate_action() returns the score now
+            reward = node.get_reward()
+            # reward = node.state  # simulate_action() returns the score now
 
             # 4. Backpropagation
             node.backpropagate(reward)
@@ -113,17 +114,17 @@ class MCTSPlayer(Player):
 
         return next(p for p in players if p.name == self.name).score
 
-    def predict_scores(self, players, hand):
-        original_values = defaultdict(list)
-        for player in players:
-            original_values[player] = [player.score, player.maki_icons, player.pudding_cards, player.chosen_cards, player.hand]
-        scores = defaultdict(int)
-        for candidate_card in hand:
-            ...
-
-        for player in players:
-            player.score = original_values[player][0]
-            player.maki_icons = original_values[player][1]
-            player.pudding_cards = original_values[player][2]
-            player.chosen_cards = original_values[player][3]
-            player.hand = original_values[player][4]
+    # def predict_scores(self, players, hand):
+    #     original_values = defaultdict(list)
+    #     for player in players:
+    #         original_values[player] = [player.score, player.maki_icons, player.pudding_cards, player.chosen_cards, player.hand]
+    #     scores = defaultdict(int)
+    #     for candidate_card in hand:
+    #         ...
+    #
+    #     for player in players:
+    #         player.score = original_values[player][0]
+    #         player.maki_icons = original_values[player][1]
+    #         player.pudding_cards = original_values[player][2]
+    #         player.chosen_cards = original_values[player][3]
+    #         player.hand = original_values[player][4]

@@ -1,37 +1,49 @@
 from deck import Deck
 from game_utils import *
 from collections import defaultdict
+import pandas as pd
 class Game:
     def __init__(self, players):
         self.players = players
         self.deck = None
         self.number_cards = 0
         self.game_round = 0
+        self.turn = 0
 
     def get_game_state(self):
         game_state = defaultdict(list)
         game_state["game_round"] = [self.game_round]
         game_state["players"] = self.players
+        game_state['turn'] = [self.turn]
+        return game_state
 
-        ...
     def play(self):
         for self.game_round in range(3):
-            print(self.game_round)
+            print(f"Starting round: {self.game_round}")
             # if game_round > 0:
             #     assert(len(self.deck.cards) < 104)
             self.deal_cards()
             for i in range(self.number_cards+1):
+                self.turn = i
                 for player in self.players:
                     player.play_turn(self.get_game_state())
+                for player in self.players:
+                    print(f"{player.name} chose {player.last_played}. {player.name}'s chosen cards are: {player.chosen_cards}")
                 self.pass_hands()
             score_round(self.players)
             for player in self.players:
                 player.card_history[self.game_round] = player.chosen_cards
         score_pudding_cards(self.players)
+        game_data = defaultdict(list)
+        # game_data['players'] = self.players
         for player in self.players:
+            game_data['player_name'].append(player.name)
+            game_data['score'].append(player.score)
             print(player.name, " : ", player.score)
             for game_round, cards in player.card_history.items():
+                game_data[f'round_{game_round+1}'].append(cards)
                 print(f"{game_round} : {chosen_cards_to_strings(cards)}")
+        return game_data
 
     def deal_cards(self):
         try:
