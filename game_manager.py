@@ -34,17 +34,22 @@ class Game:
                 print(f"{game_round} : {chosen_cards_to_strings(cards)}")
 
     def deal_cards(self):
-        match len(self.players):
-            case 2:
-                self.number_cards = 10
-            case 3:
-                self.number_cards = 9
-            case 4:
-                self.number_cards = 8
-            case 5:
-                self.number_cards = 7
-            case _:
-                raise ValueError("Incorrect number of players")
+        try:
+            self.number_cards = {2:10, 3:9, 4:8, 5:7}.get(len(self.players))
+        except IndexError:
+            print("Incorrect number of players")
+            exit(1)
+        # match len(self.players):
+        #     case 2:
+        #         self.number_cards = 10
+        #     case 3:
+        #         self.number_cards = 9
+        #     case 4:
+        #         self.number_cards = 8
+        #     case 5:
+        #         self.number_cards = 7
+        #     case _:
+        #         raise ValueError("Incorrect number of players")
         self.deck = Deck(self.get_pudding_cards())
         for player in self.players:
             player.chosen_cards = []
