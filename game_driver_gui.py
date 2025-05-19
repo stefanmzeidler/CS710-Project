@@ -3,12 +3,15 @@ from game_ui import GameUI
 from human_player_gui import HumanPlayerGUI
 from mcts_player import MCTSPlayer
 from random_player import RandomPlayer
-
-
+from game_utils import score_round
+from game_utils import score_pudding_cards
+from MCTSNode import MCTSNode
 def main():
+    mcts_player = MCTSPlayer()
+    # mcts_player = MCTSPlayer()
     ui = GameUI()
     human = HumanPlayerGUI("You", ui)
-    opponents = [MCTSPlayer(), RandomPlayer("RandBot")]
+    opponents = [mcts_player, RandomPlayer("RandBot")]
     players = [human] + opponents
     game = Game(players)
     orig_play_turns = game.play
@@ -23,9 +26,7 @@ def main():
                 ui.update_table_state(game.players, human.name)
                 ui.root.update()
                 game.pass_hands()
-            from game_utils import score_round
             score_round(game.players)
-        from game_utils import score_pudding_cards
         score_pudding_cards(game.players)
         ui.update_scores(game.players)
         ui.prompt_label.config(text="Game Over!")
