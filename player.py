@@ -23,16 +23,12 @@ class Player(ABC):
     def add_to_set(self, new_card):
         match new_card.name:
             case card.SQUID | card.SALMON | card.EGG:
-                duplicate = False
                 for chosen_card in self.chosen_cards:
                     if chosen_card.name == card.WASABI and chosen_card.next is None:
                         chosen_card.next = new_card
-                        duplicate = True
+                        new_card.prev = chosen_card
                         break
-                if not duplicate:
-                    self.chosen_cards.append(new_card)
-            case _:
-                self.chosen_cards.append(new_card)
+        self.chosen_cards.append(new_card)
 
     def play_turn(self, game_state):
         chosen_card = self.choose_card(game_state)

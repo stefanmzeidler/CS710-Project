@@ -1,11 +1,7 @@
 import card
 
-def score_players(players):
-    ...
-
 def score_round(players):
     score_maki_cards(players)
-    # score_pudding_cards(players)
     for player in players:
         score_set_cards(player)
         score_other_cards(player)
@@ -114,11 +110,14 @@ def score_other_cards(player):
     for chosen_card in player.chosen_cards:
         match chosen_card.name:
             case card.SQUID:
-                player.score = player.score + 3
+                if chosen_card.prev is None:
+                    player.score = player.score + 3
             case card.SALMON:
-                player.score = player.score + 2
+                if chosen_card.prev is None:
+                    player.score = player.score + 2
             case card.EGG:
-                player.score = player.score + 1
+                if chosen_card.prev is None:
+                    player.score = player.score + 1
             case card.PUDDING:
                 continue
             case card.WASABI:

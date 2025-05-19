@@ -4,13 +4,13 @@ import copy
 
 class MCTSNode:
     def __init__(self, state, parent=None, action=None):
-        self.state = state  # Should be a deepcopy of (players, hand, etc.)
+        self.state = state
         self.parent = parent
         self.children = []
         self.visits = 0
         self.total_reward = 0
         self.untried_actions = self.get_legal_actions()
-        self.action = action  # The move that led to this state
+        self.action = action
 
     def get_reward(self):
         my_player = self.get_self_player()
@@ -40,16 +40,11 @@ class MCTSNode:
         self.children.append(child_node)
         return child_node
 
+    @staticmethod
     def simulate_action(self, players, my_card):
         from game_utils import score_round
-
         simulated_players = [copy.deepcopy(p) for p in players]
         sim_self = next(p for p in simulated_players if p.name == "MCTS Player")
-        # for hand_card in sim_self.hand:
-        #     if my_card.name == hand_card.name:
-        #         sim_self.hand.remove(hand_card)
-        #         break
-        # sim_self.hand.remove(my_card)
         sim_self.remove_card(my_card)
         sim_self.add_to_set(my_card)
 
@@ -58,15 +53,14 @@ class MCTSNode:
                 if len(p.hand) == 0:
                     break
                 choice = random.choice(p.hand)
-                # p.hand.remove(choice)
                 p.remove_card(choice)
                 p.add_to_set(choice)
 
         score_round(simulated_players)
         return simulated_players
 
-    def backpropagate(self, reward):
+    def back_propagate(self, reward):
         self.visits += 1
         self.total_reward += reward
         if self.parent:
-            self.parent.backpropagate(reward)
+            self.parent.back_propagate(reward)

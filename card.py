@@ -17,6 +17,7 @@ class Card(object):
         self.name = name
         # Used to define a set of cards. If there is no previous, then it's head of stack.
         self.next = None
+        self.prev = None
 
     def __str__(self):
         if self.next:

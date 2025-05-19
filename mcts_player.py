@@ -19,7 +19,7 @@ class MCTSPlayer(Player):
             if not node.is_fully_expanded():
                 node = node.expand()
             reward = node.get_reward()
-            node.backpropagate(reward)
+            node.back_propagate(reward)
 
         best_node = root.best_child(c_param=0)
         return best_node.action

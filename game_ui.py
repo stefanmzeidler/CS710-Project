@@ -53,14 +53,6 @@ class GameUI:
                     lbl = tk.Label(card_row, text=card.name)
                     lbl.pack(side='left', padx=2)
 
-    # def update_opponents(self, players, human_name):
-    #     for widget in self.opponent_frame.winfo_children():
-    #         widget.destroy()
-    #     for player in players:
-    #         if player.name != human_name:
-    #             text = f"{player.name} played: {player.chosen_cards[-1] if player.chosen_cards else '—'}"
-    #             Label(self.opponent_frame, text=text).pack()
-
     def update_scores(self, players):
         for widget in self.score_frame.winfo_children():
             widget.destroy()

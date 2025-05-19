@@ -19,8 +19,8 @@ def main():
             for i in range(game.number_cards + 1):
                 for player in game.players:
                     player.play_turn(game.get_game_state())
-                ui.update_table_state(game.players, human.name)
                 ui.update_scores(game.players)
+                ui.update_table_state(game.players, human.name)
                 ui.root.update()
                 game.pass_hands()
             from game_utils import score_round
