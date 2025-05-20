@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-import card
 import copy
 from card import Card
 MCTSPLAYER = "MCTS Player"
 class Player(ABC):
-    def __init__(self, name):
+    def __init__(self, name = 'DefaultPlayer'):
         self.name = name
         self.hand = []
         self.card_history = defaultdict(list)
@@ -22,9 +21,9 @@ class Player(ABC):
 
     def add_to_set(self, new_card):
         match new_card.name:
-            case card.SQUID | card.SALMON | card.EGG:
+            case Card.SQUID | Card.SALMON | Card.EGG:
                 for chosen_card in self.chosen_cards:
-                    if chosen_card.name == card.WASABI and chosen_card.next is None:
+                    if chosen_card.name == Card.WASABI and chosen_card.next is None:
                         chosen_card.next = new_card
                         new_card.prev = chosen_card
                         break

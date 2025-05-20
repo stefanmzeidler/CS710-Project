@@ -6,23 +6,23 @@ class Deck:
     def __init__(self, pudding = 0):
         self.cards = []
         for i in range(14):
-            self.cards.append(Card(card.TEMPURA))
-            self.cards.append(Card(card.SASHIMI))
-            self.cards.append(Card(card.DUMPLING))
+            self.cards.append(Card(Card.TEMPURA))
+            self.cards.append(Card(Card.SASHIMI))
+            self.cards.append(Card(Card.DUMPLING))
         for i in range(12):
-            self.cards.append(Card(card.DOUBLE_MAKI))
+            self.cards.append(Card(Card.DOUBLE_MAKI))
         for i in range(10):
-            self.cards.append(Card(card.SALMON))
+            self.cards.append(Card(Card.SALMON))
         for i in range(8):
-            self.cards.append(Card(card.TRIPLE_MAKI))
+            self.cards.append(Card(Card.TRIPLE_MAKI))
         for i in range(6):
-            self.cards.append(Card(card.SINGLE_MAKI))
-            self.cards.append(Card(card.WASABI))
+            self.cards.append(Card(Card.SINGLE_MAKI))
+            self.cards.append(Card(Card.WASABI))
         for i in range(5):
-            self.cards.append(Card(card.SQUID))
-            self.cards.append(Card(card.EGG))
+            self.cards.append(Card(Card.SQUID))
+            self.cards.append(Card(Card.EGG))
         for i in range(10 - pudding):
-            self.cards.append(Card(card.PUDDING))
+            self.cards.append(Card(Card.PUDDING))
         # for i in range(4):
         #     self.cards.append(Card(card.CHOPSTICKS))
         shuffle(self.cards)

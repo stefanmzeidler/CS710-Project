@@ -7,8 +7,9 @@ from game_utils import score_round
 from game_utils import score_pudding_cards
 from MCTSNode import MCTSNode
 def main():
-    mcts_player = MCTSPlayer()
-    # mcts_player = MCTSPlayer()
+    mcts_player = MCTSPlayer(selection_policy = MCTSNode.ucb1)
+    mcts_player = MCTSPlayer(evaluation_function = MCTSNode.posas_evaluation, selection_policy=MCTSNode.ucb1)
+    mcts_player = MCTSPlayer(selection_policy = MCTSNode.ucbt)
     ui = GameUI()
     human = HumanPlayerGUI("You", ui)
     opponents = [mcts_player, RandomPlayer("RandBot")]

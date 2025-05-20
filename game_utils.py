@@ -1,4 +1,4 @@
-import card
+from card import Card
 
 def score_round(players):
     score_maki_cards(players)
@@ -27,11 +27,11 @@ def count_maki_icons(player, game_round):
     player.maki_icons = 0
     for chosen_card in chosen_cards:
         match chosen_card.name:
-            case card.SINGLE_MAKI:
+            case Card.SINGLE_MAKI:
                 player.maki_icons += 1
-            case card.DOUBLE_MAKI:
+            case Card.DOUBLE_MAKI:
                 player.maki_icons += 2
-            case card.TRIPLE_MAKI:
+            case Card.TRIPLE_MAKI:
                 player.maki_icons += 3
 
 def maki_cards_helper(maki_cards):
@@ -48,11 +48,11 @@ def get_maki_count(chosen_cards):
     maki_count = 0
     for chose_card in chosen_cards:
         match chose_card.name:
-            case card.SINGLE_MAKI:
+            case Card.SINGLE_MAKI:
                 maki_count += 1
-            case card.DOUBLE_MAKI:
+            case Card.DOUBLE_MAKI:
                 maki_count += 2
-            case card.TRIPLE_MAKI:
+            case Card.TRIPLE_MAKI:
                 maki_count += 3
             case _ :
                 continue
@@ -84,11 +84,11 @@ def score_pudding_cards(players):
 def score_set_cards(player):
     tempura_cards = sashimi_cards = dumpling_cards = 0
     for chosen_card in player.chosen_cards:
-        if chosen_card.name == card.TEMPURA:
+        if chosen_card.name == Card.TEMPURA:
             tempura_cards += 1
-        elif chosen_card.name == card.SASHIMI:
+        elif chosen_card.name == Card.SASHIMI:
             sashimi_cards += 1
-        elif chosen_card.name == card.DUMPLING:
+        elif chosen_card.name == Card.DUMPLING:
             dumpling_cards += 1
     if tempura_cards > 0:
         player.score = player.score + (tempura_cards // 2 * 5)
@@ -109,25 +109,25 @@ def score_set_cards(player):
 def score_other_cards(player):
     for chosen_card in player.chosen_cards:
         match chosen_card.name:
-            case card.SQUID:
+            case Card.SQUID:
                 if chosen_card.prev is None:
                     player.score = player.score + 3
-            case card.SALMON:
+            case Card.SALMON:
                 if chosen_card.prev is None:
                     player.score = player.score + 2
-            case card.EGG:
+            case Card.EGG:
                 if chosen_card.prev is None:
                     player.score = player.score + 1
-            case card.PUDDING:
+            case Card.PUDDING:
                 continue
-            case card.WASABI:
+            case Card.WASABI:
                 if chosen_card.next is None:
                     continue
-                elif chosen_card.next.name == card.SQUID:
+                elif chosen_card.next.name == Card.SQUID:
                     player.score = player.score + 9
-                elif chosen_card.next.name == card.SALMON:
+                elif chosen_card.next.name == Card.SALMON:
                     player.score = player.score + 6
-                elif chosen_card.next.name == card.PUDDING:
+                elif chosen_card.next.name == Card.PUDDING:
                     player.score = player.score + 3
 
 def chosen_cards_to_strings(chosen_cards):
