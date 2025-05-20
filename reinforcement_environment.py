@@ -1,5 +1,10 @@
+from __future__ import absolute_import, division, print_function
 from collections import defaultdict
-
+import base64
+import numpy as np
+import PIL.Image
+import matplotlib.pyplot as plt
+import reverb
 import numpy as np
 import tensorflow as tf
 from tf_agents.environments import utils
@@ -10,9 +15,25 @@ from tf_agents.trajectories import time_step as ts
 from tf_agents.networks import sequential
 from tf_agents.utils import common
 from tf_agents.agents.dqn import dqn_agent
-
-
-
+from tf_agents.policies import policy_saver
+import reverb
+from tf_agents.replay_buffers import reverb_replay_buffer
+from tf_agents.replay_buffers import reverb_utils
+from tf_agents.agents.dqn import dqn_agent
+from tf_agents.drivers import py_driver
+from tf_agents.environments import suite_gym
+from tf_agents.environments import tf_py_environment
+from tf_agents.eval import metric_utils
+from tf_agents.metrics import tf_metrics
+from tf_agents.networks import sequential
+from tf_agents.policies import py_tf_eager_policy
+from tf_agents.policies import random_tf_policy
+from tf_agents.replay_buffers import reverb_replay_buffer
+from tf_agents.replay_buffers import reverb_utils
+from tf_agents.trajectories import trajectory
+from tf_agents.specs import tensor_spec
+from tf_agents.specs import ArraySpec
+from tf_agents.utils import common
 
 from card import Card
 from game_manager import Game
@@ -29,17 +50,23 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
                            Card.SINGLE_MAKI, Card.SQUID, Card.TEMPURA, Card.TRIPLE_MAKI, Card.WASABI]
         players = [self, RandomPlayer("Random1"), RandomPlayer("Random2")]
         self.game = Game(players)
-        self._action_spec = array_spec.BoundedArraySpec(
+
+        self._action_spec = tensor_spec.BoundedTensorSpec(
             shape=(), dtype=np.int32, minimum=0, maximum=len(self.categories) - 1, name='action')
-        self._observation_spec = array_spec.BoundedArraySpec(
-            shape=(2, len(self.categories)), dtype=np.int32, minimum=0, name='observation')
-        self._reward_spec = array_spec.BoundedArraySpec(shape=(), dtype=np.int32, minimum=0, name='reward')
+        # self._action_spec = array_spec.BoundedArraySpec(
+        #     shape=(1,), dtype=np.int32, minimum=0, maximum=len(self.categories) - 1, name='action')
+        # self._observation_spec = array_spec.BoundedArraySpec(
+        #     shape=(2, len(self.categories)), dtype=np.array, minimum=0, maximum=len(self.categories) - 1,
+        #     name='observation')
+        self._observation_spec = {
+            'observation': tensor_spec.BoundedTensorSpec(shape=(len(self.categories),), minimum=0, maximum=len(self.categories) - 1,dtype=np.int32, name = 'observation'),
+            'mask': tensor_spec.BoundedTensorSpec(shape=(len(self.categories),), dtype= bool, name='mask', minimum = False, maximum = True),}
+        # self._reward_spec = tensor_spec.BoundedTensorSpec(shape=(), dtype=np.int32, minimum=0, maximum = 1000,  name='reward')
         self._state = np.zeros(len(self.categories), dtype=np.int32)
         self._episode_ended = False
         self.card_to_choose = None
-
-        self.qnet = self.create_qnet()
-        self.agent = self.create_agent(network = self.qnet,learning_rate = 1e-3)
+        self.qnet = None
+        self.agent = None
 
     def action_spec(self):
         return self._action_spec
@@ -54,18 +81,22 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             return self.score
 
     def _step(self, action) -> ts.TimeStep:
+        print(action)
         self.card_to_choose = Card(self.categories[action])
         if self._episode_ended:
             return self.reset()
         elif self.game.game_round > 3 or self.play_single_turn() is None:
             self._episode_ended = True
+        observation = {'observation': self._state, 'mask': self.hand_to_action_mask(self.hand)}
         if self._episode_ended:
             reward = self.score
-            return ts.termination(np.array([self._state, self.cards_to_vector(self.hand)], dtype=np.int32),
-                                  reward=reward)
+            return ts.termination(observation=observation, reward=reward)
         else:
-            return ts.transition(np.array([self._state, self.cards_to_vector(self.hand)], dtype=np.int32), reward=0,
-                                 discount=1.0)
+            return ts.transition(observation=observation, reward=0, discount=1.0)
+
+    @staticmethod
+    def observation_and_action_constraint_splitter(observation):
+        return observation['observation'], observation['mask']
 
     def play_single_turn(self):
         if self.game.turn > self.game.number_cards:
@@ -96,18 +127,21 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         self._state = np.zeros(len(self.categories), dtype=np.int32)
         players = [self, RandomPlayer("Random1"), RandomPlayer("Random1")]
         self.game = Game(players)
-        return ts.restart(np.array([self._state, self.cards_to_vector(self.hand)], dtype=np.int32))
+        observation = {'observation': self._state, 'mask': self.hand_to_action_mask(self.hand)}
+        return ts.restart(observation = observation)
 
     def cards_to_vector(self, card_list):
         card_names = [c.name for c in card_list]
         vector = np.zeros(len(self.categories), dtype=np.int32)
         for name in card_names:
             vector[self.categories.index(name)] += 1
-        return vector
+        return np.array(vector, dtype=np.int32)
+
+    def hand_to_action_mask(self, hand):
+        return np.array([card_type in hand for card_type in self.categories], dtype = bool)
 
     def choose_card(self, game_state):
         return self.card_to_choose
-
 
     def create_qnet(self):
         """
@@ -124,6 +158,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
                 activation=tf.keras.activations.relu,
                 kernel_initializer=tf.keras.initializers.VarianceScaling(
                     scale=2.0, mode='fan_in', distribution='truncated_normal'))
+
         dense_layers = [dense_layer(num_units) for num_units in fc_layer_params]
         q_values_layer = tf.keras.layers.Dense(
             num_actions,
@@ -133,7 +168,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             bias_initializer=tf.keras.initializers.Constant(-0.2))
         return sequential.Sequential(dense_layers + [q_values_layer])
 
-    def create_agent(self,network, learning_rate):
+    def create_agent(self, network, learning_rate):
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         train_step_counter = tf.Variable(0)
         agent = dqn_agent.DqnAgent(
@@ -145,7 +180,6 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             train_step_counter=train_step_counter)
         agent.initialize()
         return agent
-
 
     def compute_avg_return(self, policy, num_episodes=10):
         """
@@ -166,5 +200,125 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         avg_return = total_return / num_episodes
         return avg_return.numpy()[0]
 
+    def create_observer(self):
+        replay_buffer_max_length = 100000
+        table_name = 'uniform_table'
+        replay_buffer_signature = tensor_spec.from_spec(
+            self.agent.collect_data_spec)
+        replay_buffer_signature = tensor_spec.add_outer_dim(
+            replay_buffer_signature)
+
+        table = reverb.Table(
+            table_name,
+            max_size=replay_buffer_max_length,
+            sampler=reverb.selectors.Uniform(),
+            remover=reverb.selectors.Fifo(),
+            rate_limiter=reverb.rate_limiters.MinSize(1),
+            signature=replay_buffer_signature)
+
+        reverb_server = reverb.Server([table])
+
+        replay_buffer = reverb_replay_buffer.ReverbReplayBuffer(
+            self.agent.collect_data_spec,
+            table_name=table_name,
+            sequence_length=2,
+            local_server=reverb_server)
+
+        rb_observer = reverb_utils.ReverbAddTrajectoryObserver(
+            replay_buffer.py_client,
+            table_name,
+            sequence_length=2)
+
+        return rb_observer
+
+    def train(self):
+        num_eval_episodes = 10
+        initial_collect_steps = 100
+        batch_size = 64
+        learning_rate = 1e-3
+        replay_buffer_max_length = 100000
+        collect_steps_per_iteration = 1
+        num_iterations = 20000
+        log_interval = 200
+        eval_interval = 1000
+        random_policy = random_tf_policy.RandomTFPolicy(self.time_step_spec(), self.action_spec(),
+                                                        observation_and_action_constraint_splitter=SushiGoRLEnvironment.observation_and_action_constraint_splitter)
+
+        self.qnet = self.create_qnet()
+        self.agent = self.create_agent(network=self.qnet, learning_rate=learning_rate)
+
+        table_name = 'uniform_table'
+        replay_buffer_signature = tensor_spec.from_spec(
+            self.agent.collect_data_spec)
+        replay_buffer_signature = tensor_spec.add_outer_dim(
+            replay_buffer_signature)
+
+        table = reverb.Table(
+            table_name,
+            max_size=replay_buffer_max_length,
+            sampler=reverb.selectors.Uniform(),
+            remover=reverb.selectors.Fifo(),
+            rate_limiter=reverb.rate_limiters.MinSize(1),
+            signature=replay_buffer_signature)
+
+        reverb_server = reverb.Server([table])
+
+        replay_buffer = reverb_replay_buffer.ReverbReplayBuffer(
+            self.agent.collect_data_spec,
+            table_name=table_name,
+            sequence_length=2,
+            local_server=reverb_server)
+
+        rb_observer = reverb_utils.ReverbAddTrajectoryObserver(
+            replay_buffer.py_client,
+            table_name,
+            sequence_length=2)
+        py_driver.PyDriver(
+            self,
+            py_tf_eager_policy.PyTFEagerPolicy(
+                random_policy, use_tf_function=True),
+            [rb_observer],
+            max_steps=initial_collect_steps).run(self.reset())
+        dataset = replay_buffer.as_dataset(
+            num_parallel_calls=3,
+            sample_batch_size=batch_size,
+            num_steps=2).prefetch(3)
+        iterator = iter(dataset)
+        print(iterator)
+        self.agent.train = common.function(self.agent.train)
+        self.agent.train_step_counter.assign(0)
+        avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
+        returns = [avg_return]
+        print(returns)
+
+        time_step = self.reset()
+        collect_driver = py_driver.PyDriver(
+            self,
+            py_tf_eager_policy.PyTFEagerPolicy(
+                self.agent.collect_policy, use_tf_function=True),
+            [rb_observer],
+            max_steps=collect_steps_per_iteration)
+
+        for _ in range(num_iterations):
+            time_step, _ = collect_driver.run(time_step)
+            experience, unused_info = next(iterator)
+            train_loss = self.agent.train(experience).loss
+            step = self.agent.train_step_counter.numpy()
+            if step % log_interval == 0:
+                print('step = {0}: loss = {1}'.format(step, train_loss))
+
+            if step % eval_interval == 0:
+                avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
+                print('step = {0}: Average Return = {1}'.format(step, avg_return))
+                returns.append(avg_return)
+
+        iterations = range(0, num_iterations + 1, eval_interval)
+        plt.plot(iterations, returns)
+        plt.ylabel('Average Return')
+        plt.xlabel('Iterations')
+        plt.ylim(top=250)
+
+
 environment = SushiGoRLEnvironment()
 utils.validate_py_environment(environment, episodes=5)
+environment.train()
