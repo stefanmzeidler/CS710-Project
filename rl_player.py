@@ -11,15 +11,15 @@ from reinforcement_environment import SushiGoRLEnvironment as sge
 
 
 class RLPlayer(Player):
-    def __init__(self):
+    def __init__(self, policy_name):
         super().__init__(name="RLPlayer")
-        policy_dir = os.path.join(os.getcwd(), 'policies')
+        policy_dir = os.path.join(os.getcwd(), policy_name)
         self.policy = tf.saved_model.load(policy_dir)
 
     def choose_card(self, game_state) -> Card:
-        game_turn = game_state.turn
-        game_round = game_state.game_round
-        number_cards = {2: 10, 3: 9, 4: 8, 5: 7}.get(len(game_state.game_players))
+        game_turn = game_state['turn'][0]
+        game_round = game_state['game_round'][0]
+        number_cards = {2: 10, 3: 9, 4: 8, 5: 7}.get(len(game_state['game_players']))
         if game_turn == 0 and game_round == 1:
             step_type = 1
         elif game_turn == 3 and game_turn == number_cards:
@@ -27,7 +27,7 @@ class RLPlayer(Player):
         else:
             step_type = 3
         action_step = self.policy.action(self.create_timestep(step_type))
-        card_name = sge.CATEGORIES[action_step.action]
+        card_name = sge.CATEGORIES[action_step.action[0]]
         return next(hand_card for hand_card in self.hand if hand_card.name == card_name)
 
     def create_timestep(self, step_type):

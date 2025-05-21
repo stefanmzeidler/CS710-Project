@@ -7,6 +7,7 @@ import numpy as np
 import reverb
 import tensorflow as tf
 from tf_agents.agents.dqn import dqn_agent
+from tf_agents.bandits.agents import lin_ucb_agent
 from tf_agents.drivers import py_driver
 from tf_agents.environments import tf_py_environment as tfpy
 from tf_agents.environments.py_environment import PyEnvironment
@@ -143,12 +144,12 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
     def choose_card(self, game_state):
         return self.card_to_choose
 
-    def create_qnet(self):
+    def create_qnet(self, fc_layer_params):
         """
         Adapted from https://github.com/tensorflow/agents/blob/master/docs/tutorials/1_dqn_tutorial.ipynb
         :return:
         """
-        fc_layer_params = (100, 50)
+        # fc_layer_params = (100, 100, 100)
         action_tensor_spec = tensor_spec.from_spec(self.action_spec())
         num_actions = action_tensor_spec.maximum - action_tensor_spec.minimum + 1
 
@@ -168,18 +169,26 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             bias_initializer=tf.keras.initializers.Constant(-0.2))
         return sequential.Sequential(dense_layers + [q_values_layer])
 
-    def create_agent(self, network, learning_rate, loss_fn):
+    def create_agent(self, agent_type, network, learning_rate, loss_fn):
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         train_step_counter = tf.Variable(0)
         agent_tf_env = tfpy.TFPyEnvironment(self)
-        agent = dqn_agent.DqnAgent(
-            agent_tf_env.time_step_spec(),
-            agent_tf_env.action_spec(),
-            q_network=network,
-            optimizer=optimizer,
-            td_errors_loss_fn=loss_fn,  # From tutorial original : common.element_wise_squared_loss
-            train_step_counter=train_step_counter,
-            observation_and_action_constraint_splitter=self.observation_and_action_constraint_splitter)
+        agent = None
+        if agent_type is dqn_agent.DqnAgent:
+            agent = dqn_agent.DqnAgent(
+                time_step_spec = agent_tf_env.time_step_spec(),
+                action_spec = agent_tf_env.action_spec(),
+                q_network=network,
+                optimizer=optimizer,
+                td_errors_loss_fn=loss_fn,  # From tutorial original : common.element_wise_squared_loss
+                train_step_counter=train_step_counter,
+                observation_and_action_constraint_splitter=self.observation_and_action_constraint_splitter)
+        elif agent_type is lin_ucb_agent.LinearUCBAgent:
+            agent = lin_ucb_agent.LinearUCBAgent(
+                time_step_spec = agent_tf_env.time_step_spec(),
+                action_spec = agent_tf_env.action_spec()
+            )
+
         agent.initialize()
         return agent
 
@@ -233,13 +242,13 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
 
         return rb_observer
 
-    def train(self, num_eval_episodes=10, initial_collect_steps=100, batch_size=64, learning_rate=1e-3,
+    def train(self, policy_name, agent_type, fc_layer_params  = (100, 50), num_eval_episodes=10, initial_collect_steps=100, batch_size=64, learning_rate=1e-3,
               replay_buffer_max_length=100000, collect_steps_per_iteration=1, num_iterations=5000, log_interval=200,
               eval_interval=1000, loss_fn=common.element_wise_squared_loss):
-        random_policy = random_tf_policy.RandomTFPolicy(self.time_step_spec(), self.action_spec(),
+        game_policy = random_tf_policy.RandomTFPolicy(self.time_step_spec(), self.action_spec(),
                                                         observation_and_action_constraint_splitter=SushiGoRLEnvironment.observation_and_action_constraint_splitter)
-        self.qnet = self.create_qnet()
-        self.agent = self.create_agent(network=self.qnet, learning_rate=learning_rate, loss_fn=loss_fn)
+        self.qnet = self.create_qnet(fc_layer_params = fc_layer_params)
+        self.agent = self.create_agent(agent_type = agent_type, network=self.qnet, learning_rate=learning_rate, loss_fn=loss_fn)
 
         table_name = 'uniform_table'
         replay_buffer_signature = tensor_spec.from_spec(
@@ -269,17 +278,17 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             sequence_length=2)
         tf_env = tfpy.TFPyEnvironment(self)
         tf_policy = tf_py_policy.TFPyPolicy(py_tf_eager_policy.PyTFEagerPolicy(
-            random_policy, use_tf_function=True))
+            game_policy, use_tf_function=True))
         py_driver.PyDriver(
             self,
             py_tf_eager_policy.PyTFEagerPolicy(
-                random_policy, use_tf_function=True),
+                game_policy, use_tf_function=True),
             [rb_observer],
             max_steps=initial_collect_steps).run(self.reset())
         # tf_driver.TFDriver(
         #     tf_env,
         #     py_tf_eager_policy.PyTFEagerPolicy(
-        #         random_policy, use_tf_function=True),
+        #         game_policy, use_tf_function=True),
         #     [rb_observer],
         #     max_steps=initial_collect_steps).run(self.reset())
         dataset = replay_buffer.as_dataset(
@@ -310,7 +319,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             step = self.agent.train_step_counter.numpy()
             if step % log_interval == 0:
                 print('step = {0}: loss = {1}'.format(step, train_loss))
-        policy_dir = os.path.join(os.getcwd(), 'policies')
+        policy_dir = os.path.join(os.getcwd(), policy_name)
         tf_policy_saver = policy_saver.PolicySaver(self.agent.policy)
         tf_policy_saver.save(policy_dir)
         #
@@ -325,8 +334,8 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         # plt.xlabel('Iterations')
         # plt.ylim(top=250)
 
-
-environment = SushiGoRLEnvironment()
-tf_env = tfpy.TFPyEnvironment(environment)
-# utils.validate_py_environment(environment, episodes=5, observation_and_action_constraint_splitter = SushiGoRLEnvironment.observation_and_action_constraint_splitter)
-environment.train()
+if __name__ == "__main__":
+    environment = SushiGoRLEnvironment()
+    tf_env = tfpy.TFPyEnvironment(environment)
+    # utils.validate_py_environment(environment, episodes=5, observation_and_action_constraint_splitter = SushiGoRLEnvironment.observation_and_action_constraint_splitter)
+    environment.train('Perceptron', dqn_agent.DqnAgent, fc_layer_params = (100,), num_iterations = 3000)
