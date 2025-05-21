@@ -30,14 +30,7 @@ def run_tournament(player_types, policy_name = None, num_games=100,evaluation_fu
     wins = {name: 0 for name in player_names}
     ranks = {name: [0, 0, 0] for name in player_names}
 
-
-
     for _ in range(num_games):
-        # players = [
-        #     MCTSPlayer(MCTSPLAYER, evaluation_function = evaluation_function, selection_policy = selection_policy, simulations = simulations),
-        #     RandomPlayer("Rand1"),
-        #     RandomPlayer("Rand2")
-        # ]
         players = list(player_factory(player_types))
         game = Game(players)
         game.play()
@@ -64,5 +57,5 @@ def run_tournament(player_types, policy_name = None, num_games=100,evaluation_fu
 
 
 if __name__ == "__main__":
-    game_player_types = [MCTSPlayer, RandomPlayer, RandomPlayer]
-    run_tournament(player_types = game_player_types, policy_name="Tripe100Layers3000Iterations", num_games=100, selection_policy=MCTSNode.ucb1, simulations = 10)
+    game_player_types = [RLPlayer, MCTSPlayer, RandomPlayer]
+    run_tournament(player_types = game_player_types, policy_name="Double300Layers3000IterationsReLu", num_games=100, simulations = 40)

@@ -24,6 +24,7 @@ from tf_agents.specs import tensor_spec
 from tf_agents.trajectories import time_step as ts
 from tf_agents.utils import common
 
+
 from card import Card
 from game_manager import Game
 from game_utils import score_round
@@ -38,18 +39,11 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
     def __init__(self):
         super().__init__()
         self.name = 'RLPlayer'
-        # self.categories = [Card.DOUBLE_MAKI, Card.DUMPLING, Card.EGG, Card.PUDDING, Card.SALMON, Card.SASHIMI,
-        #                    Card.SINGLE_MAKI, Card.SQUID, Card.TEMPURA, Card.TRIPLE_MAKI, Card.WASABI]
         players = [self, RandomPlayer("Random1"), RandomPlayer("Random2")]
         self.game = Game(players)
 
         self._action_spec = tensor_spec.BoundedTensorSpec(
             shape=(), dtype=np.int32, minimum=0, maximum=len(SushiGoRLEnvironment.CATEGORIES) - 1, name='action')
-        # self._action_spec = array_spec.BoundedArraySpec(
-        #     shape=(1,), dtype=np.int32, minimum=0, maximum=len(self.categories) - 1, name='action')
-        # self._observation_spec = array_spec.BoundedArraySpec(
-        #     shape=(2, len(self.categories)), dtype=np.array, minimum=0, maximum=len(self.categories) - 1,
-        #     name='observation')
         self._observation_spec = {
             'observation': array_spec.BoundedArraySpec(shape=(len(SushiGoRLEnvironment.CATEGORIES),), minimum=0,
                                                        maximum=len(SushiGoRLEnvironment.CATEGORIES) - 1, dtype=np.int32,
@@ -156,7 +150,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         def dense_layer(num_units):
             return tf.keras.layers.Dense(
                 num_units,
-                activation=tf.keras.activations.relu,
+                activation= tf.keras.activations.relu, #Alternatives: tf.keras.layers.LeakyReLU(alpha=0.01), tf.keras.activations.sigmoid
                 kernel_initializer=tf.keras.initializers.VarianceScaling(
                     scale=2.0, mode='fan_in', distribution='truncated_normal'))
 
@@ -285,12 +279,6 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
                 game_policy, use_tf_function=True),
             [rb_observer],
             max_steps=initial_collect_steps).run(self.reset())
-        # tf_driver.TFDriver(
-        #     tf_env,
-        #     py_tf_eager_policy.PyTFEagerPolicy(
-        #         game_policy, use_tf_function=True),
-        #     [rb_observer],
-        #     max_steps=initial_collect_steps).run(self.reset())
         dataset = replay_buffer.as_dataset(
             num_parallel_calls=3,
             sample_batch_size=batch_size,
@@ -299,9 +287,6 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         print(iterator)
         self.agent.train = common.function(self.agent.train)
         self.agent.train_step_counter.assign(0)
-        # avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
-        # returns = [avg_return]
-        # print(returns)
 
         time_step = self.reset()
 
@@ -322,20 +307,9 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         policy_dir = os.path.join(os.getcwd(), policy_name)
         tf_policy_saver = policy_saver.PolicySaver(self.agent.policy)
         tf_policy_saver.save(policy_dir)
-        #
-        # if step % eval_interval == 0:
-        #     avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
-        #     print('step = {0}: Average Return = {1}'.format(step, avg_return))
-        #     returns.append(avg_return)
 
-        # iterations = range(0, num_iterations + 1, eval_interval)
-        # plt.plot(iterations, returns)
-        # plt.ylabel('Average Return')
-        # plt.xlabel('Iterations')
-        # plt.ylim(top=250)
 
 if __name__ == "__main__":
     environment = SushiGoRLEnvironment()
-    tf_env = tfpy.TFPyEnvironment(environment)
     # utils.validate_py_environment(environment, episodes=5, observation_and_action_constraint_splitter = SushiGoRLEnvironment.observation_and_action_constraint_splitter)
-    environment.train('Tripe100Layers3000Iterations', dqn_agent.DqnAgent, fc_layer_params = (100,100, 100), num_iterations = 3000)
+    environment.train('Test', dqn_agent.DqnAgent, fc_layer_params = (50,50), num_iterations = 300, log_interval = 25)
