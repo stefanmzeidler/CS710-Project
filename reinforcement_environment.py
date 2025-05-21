@@ -312,4 +312,4 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
 if __name__ == "__main__":
     environment = SushiGoRLEnvironment()
     # utils.validate_py_environment(environment, episodes=5, observation_and_action_constraint_splitter = SushiGoRLEnvironment.observation_and_action_constraint_splitter)
-    environment.train('Test', dqn_agent.DqnAgent, fc_layer_params = (50,50), num_iterations = 300, log_interval = 25)
+    environment.train('Test2', dqn_agent.DqnAgent, fc_layer_params = (100,50), num_iterations = 400, log_interval = 50)

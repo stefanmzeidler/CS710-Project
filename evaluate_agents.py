@@ -58,4 +58,4 @@ def run_tournament(player_types, policy_name = None, num_games=100,evaluation_fu
 
 if __name__ == "__main__":
     game_player_types = [RLPlayer, MCTSPlayer, RandomPlayer]
-    run_tournament(player_types = game_player_types, policy_name="Double300Layers3000IterationsReLu", num_games=100, simulations = 40)
+    run_tournament(player_types = game_player_types, policy_name="Test2", num_games=100, simulations = 10)

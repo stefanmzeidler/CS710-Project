@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
     name='CS710-Project',
-    version='',
+    version='1.0',
     packages=[''],
     url='',
     license='',
-    author='School',
-    author_email='',
+    author='Stefan Zeidler',
+    author_email='szeidler@uwm.edu',
     description=''
 )
