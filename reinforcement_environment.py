@@ -338,4 +338,4 @@ if __name__ == "__main__":
     environment = SushiGoRLEnvironment()
     tf_env = tfpy.TFPyEnvironment(environment)
     # utils.validate_py_environment(environment, episodes=5, observation_and_action_constraint_splitter = SushiGoRLEnvironment.observation_and_action_constraint_splitter)
-    environment.train('Perceptron', dqn_agent.DqnAgent, fc_layer_params = (100,), num_iterations = 3000)
+    environment.train('Tripe100Layers3000Iterations', dqn_agent.DqnAgent, fc_layer_params = (100,100, 100), num_iterations = 3000)
