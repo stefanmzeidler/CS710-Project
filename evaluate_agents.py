@@ -64,5 +64,5 @@ def run_tournament(player_types, policy_name = None, num_games=100,evaluation_fu
 
 
 if __name__ == "__main__":
-    game_player_types = [RLPlayer, RandomPlayer, RandomPlayer]
-    run_tournament(game_player_types, policy_name="DQNMeanSquaredFourDeep", num_games=100, selection_policy=MCTSNode.ucb1, simulations = 10)
+    game_player_types = [MCTSPlayer, RandomPlayer, RandomPlayer]
+    run_tournament(player_types = game_player_types, policy_name="Tripe100Layers3000Iterations", num_games=100, selection_policy=MCTSNode.ucb1, simulations = 10)
