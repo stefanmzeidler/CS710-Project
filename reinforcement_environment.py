@@ -1,42 +1,28 @@
 from __future__ import absolute_import, division, print_function
+
+import os
 from collections import defaultdict
-import base64
+
 import numpy as np
-import PIL.Image
-import matplotlib.pyplot as plt
 import reverb
-import numpy as np
 import tensorflow as tf
-from tf_agents.environments import utils
+from tf_agents.agents.dqn import dqn_agent
+from tf_agents.drivers import py_driver
+from tf_agents.environments import tf_py_environment as tfpy
 from tf_agents.environments.py_environment import PyEnvironment
+from tf_agents.networks import sequential
+from tf_agents.policies import policy_saver
+from tf_agents.policies import py_tf_eager_policy
+from tf_agents.policies import random_tf_policy
+from tf_agents.policies import tf_py_policy
+from tf_agents.replay_buffers import reverb_replay_buffer
+from tf_agents.replay_buffers import reverb_utils
+from tf_agents.specs import ArraySpec
 from tf_agents.specs import array_spec
 from tf_agents.specs import tensor_spec
 from tf_agents.trajectories import time_step as ts
-from tf_agents.networks import sequential
 from tf_agents.utils import common
-from tf_agents.agents.dqn import dqn_agent
-from tf_agents.policies import policy_saver
-import reverb
-from tf_agents.replay_buffers import reverb_replay_buffer
-from tf_agents.replay_buffers import reverb_utils
-from tf_agents.agents.dqn import dqn_agent
-from tf_agents.drivers import py_driver
-from tf_agents.drivers import tf_driver
-from tf_agents.environments import suite_gym
-from tf_agents.environments import tf_py_environment as tfpy
-from tf_agents.eval import metric_utils
-from tf_agents.metrics import tf_metrics
-from tf_agents.networks import sequential
-from tf_agents.policies import py_tf_eager_policy
-from tf_agents.policies import tf_py_policy
-from tf_agents.policies import random_tf_policy
-from tf_agents.replay_buffers import reverb_replay_buffer
-from tf_agents.replay_buffers import reverb_utils
-from tf_agents.trajectories import trajectory
-from tf_agents.specs import tensor_spec
-from tf_agents.specs import ArraySpec
-from tf_agents.utils import common
-import os
+
 from card import Card
 from game_manager import Game
 from game_utils import score_round
@@ -45,28 +31,31 @@ from random_player import RandomPlayer
 
 
 class SushiGoRLEnvironment(PyEnvironment, Player):
+    CATEGORIES = [Card.DOUBLE_MAKI, Card.DUMPLING, Card.EGG, Card.PUDDING, Card.SALMON, Card.SASHIMI,
+                  Card.SINGLE_MAKI, Card.SQUID, Card.TEMPURA, Card.TRIPLE_MAKI, Card.WASABI]
+
     def __init__(self):
         super().__init__()
         self.name = 'RLPlayer'
-        self.categories = [Card.DOUBLE_MAKI, Card.DUMPLING, Card.EGG, Card.PUDDING, Card.SALMON, Card.SASHIMI,
-                           Card.SINGLE_MAKI, Card.SQUID, Card.TEMPURA, Card.TRIPLE_MAKI, Card.WASABI]
+        # self.categories = [Card.DOUBLE_MAKI, Card.DUMPLING, Card.EGG, Card.PUDDING, Card.SALMON, Card.SASHIMI,
+        #                    Card.SINGLE_MAKI, Card.SQUID, Card.TEMPURA, Card.TRIPLE_MAKI, Card.WASABI]
         players = [self, RandomPlayer("Random1"), RandomPlayer("Random2")]
         self.game = Game(players)
 
         self._action_spec = tensor_spec.BoundedTensorSpec(
-            shape=(), dtype=np.int32, minimum=0, maximum=len(self.categories) - 1, name='action')
+            shape=(), dtype=np.int32, minimum=0, maximum=len(SushiGoRLEnvironment.CATEGORIES) - 1, name='action')
         # self._action_spec = array_spec.BoundedArraySpec(
         #     shape=(1,), dtype=np.int32, minimum=0, maximum=len(self.categories) - 1, name='action')
         # self._observation_spec = array_spec.BoundedArraySpec(
         #     shape=(2, len(self.categories)), dtype=np.array, minimum=0, maximum=len(self.categories) - 1,
         #     name='observation')
         self._observation_spec = {
-            'observation': array_spec.BoundedArraySpec(shape=(len(self.categories),), minimum=0,
-                                                       maximum=len(self.categories) - 1, dtype=np.int32,
+            'observation': array_spec.BoundedArraySpec(shape=(len(SushiGoRLEnvironment.CATEGORIES),), minimum=0,
+                                                       maximum=len(SushiGoRLEnvironment.CATEGORIES) - 1, dtype=np.int32,
                                                        name='observation'),
-            'mask': ArraySpec(shape=(len(self.categories),), dtype=bool, name='mask'), }
+            'mask': ArraySpec(shape=(len(SushiGoRLEnvironment.CATEGORIES),), dtype=bool, name='mask'), }
         # self._reward_spec = tensor_spec.BoundedTensorSpec(shape=(), dtype=np.int32, minimum=0, maximum = 1000,  name='reward')
-        self._state = np.zeros(len(self.categories), dtype=np.int32)
+        self._state = np.zeros(len(SushiGoRLEnvironment.CATEGORIES), dtype=np.int32)
         self._episode_ended = False
         self.card_to_choose = None
         self.qnet = None
@@ -85,7 +74,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             return self.score
 
     def _step(self, action) -> ts.TimeStep:
-        self.card_to_choose = Card(self.categories[action])
+        self.card_to_choose = Card(SushiGoRLEnvironment.CATEGORIES[action])
         # names = [hand_card.name for hand_card in self.hand]
         # print(names)
         # print(action)
@@ -138,16 +127,18 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         observation = {'observation': self._state, 'mask': self.hand_to_action_mask(self.hand)}
         return ts.restart(observation=observation)
 
-    def cards_to_vector(self, card_list):
+    @staticmethod
+    def cards_to_vector(card_list):
         card_names = [c.name for c in card_list]
-        vector = np.zeros(len(self.categories), dtype=np.int32)
+        vector = np.zeros(len(SushiGoRLEnvironment.CATEGORIES), dtype=np.int32)
         for name in card_names:
-            vector[self.categories.index(name)] += 1
+            vector[SushiGoRLEnvironment.CATEGORIES.index(name)] += 1
         return np.array(vector, dtype=np.int32)
 
-    def hand_to_action_mask(self, hand):
+    @staticmethod
+    def hand_to_action_mask(hand):
         card_types = [hand_card.name for hand_card in hand]
-        return np.array([card_type in card_types for card_type in self.categories], dtype=bool)
+        return np.array([card_type in card_types for card_type in SushiGoRLEnvironment.CATEGORIES], dtype=bool)
 
     def choose_card(self, game_state):
         return self.card_to_choose
@@ -186,7 +177,7 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
             agent_tf_env.action_spec(),
             q_network=network,
             optimizer=optimizer,
-            td_errors_loss_fn=loss_fn, # From tutorial original : common.element_wise_squared_loss
+            td_errors_loss_fn=loss_fn,  # From tutorial original : common.element_wise_squared_loss
             train_step_counter=train_step_counter,
             observation_and_action_constraint_splitter=self.observation_and_action_constraint_splitter)
         agent.initialize()
@@ -244,11 +235,11 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
 
     def train(self, num_eval_episodes=10, initial_collect_steps=100, batch_size=64, learning_rate=1e-3,
               replay_buffer_max_length=100000, collect_steps_per_iteration=1, num_iterations=5000, log_interval=200,
-              eval_interval=1000, loss_fn = common.element_wise_squared_loss):
+              eval_interval=1000, loss_fn=common.element_wise_squared_loss):
         random_policy = random_tf_policy.RandomTFPolicy(self.time_step_spec(), self.action_spec(),
                                                         observation_and_action_constraint_splitter=SushiGoRLEnvironment.observation_and_action_constraint_splitter)
         self.qnet = self.create_qnet()
-        self.agent = self.create_agent(network=self.qnet, learning_rate=learning_rate, loss_fn =loss_fn)
+        self.agent = self.create_agent(network=self.qnet, learning_rate=learning_rate, loss_fn=loss_fn)
 
         table_name = 'uniform_table'
         replay_buffer_signature = tensor_spec.from_spec(
@@ -323,10 +314,10 @@ class SushiGoRLEnvironment(PyEnvironment, Player):
         tf_policy_saver = policy_saver.PolicySaver(self.agent.policy)
         tf_policy_saver.save(policy_dir)
         #
-            # if step % eval_interval == 0:
-            #     avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
-            #     print('step = {0}: Average Return = {1}'.format(step, avg_return))
-            #     returns.append(avg_return)
+        # if step % eval_interval == 0:
+        #     avg_return = self.compute_avg_return(self.agent.policy, num_eval_episodes)
+        #     print('step = {0}: Average Return = {1}'.format(step, avg_return))
+        #     returns.append(avg_return)
 
         # iterations = range(0, num_iterations + 1, eval_interval)
         # plt.plot(iterations, returns)
